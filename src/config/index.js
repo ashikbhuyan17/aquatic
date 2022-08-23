@@ -49,7 +49,7 @@ function getGlobalConfig() {
      }
      */
     const config = {
-        routes: assets.routes
+        routes: getGlobbedPaths(assets.routes)
     }
     /**
      const config = {

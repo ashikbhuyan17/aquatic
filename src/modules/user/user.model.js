@@ -1,3 +1,4 @@
+
 const path = require('path')
 const bcrypt = require('bcrypt');
 const sequelize = require(path.join(process.cwd(), '/src/config/lib/sequelize.js'))
