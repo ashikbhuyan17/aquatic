@@ -1,5 +1,7 @@
 const Admin = require("./admin.model");
 const jwt = require("jsonwebtoken");
+const registerSchema = require('./register.schema')
+
 
 const checkIfAdminExists = async (email) => {
     try {
@@ -61,31 +63,82 @@ const login = async (req, res) => {
 
 
 const register = async (req, res) => {
-    const { firstName, lastName, email, password } = req.body
-    const admin = { firstName, lastName, email, password }
-    const existingAdmin = await checkIfAdminExists(admin.email)
-    console.log("existingAdmin", existingAdmin)
-
-    if (!existingAdmin) {
-        try {
-            const registerAdmin = await Admin.create(admin)
-            console.log("registerAdmin ", registerAdmin);
-            res.status(201).json({
-                message: "Admin registration successful ! Please check email for active account.",
-                data: registerAdmin.dataValues
-            });
-        } catch (error) {
-            console.log(error);
+    const { firstName, lastName, email, password, confirmPassword } = req.body
+    const admin = { firstName, lastName, email, password, confirmPassword }
+    /**
+        1. valid email
+           a. string
+           b. @ sign
+           c. .com string
+        2. password
+           a. string
+           b. at least one capital letter, one small letter, one number, one special char. 
+     */
+    try {
+        await registerSchema.validate({ email, password, confirmPassword }, { abortEarly: false });
+        const existingAdmin = await checkIfAdminExists(admin.email)
+        if (!existingAdmin) {
+            try {
+                const registerAdmin = await Admin.create(admin)
+                res.status(201).json({
+                    message: "Admin registration successful ! Please check email for active account.",
+                    data: registerAdmin.dataValues
+                });
+            } catch (error) {
+                console.log(error);
+                res.status(500).json({ err: 'Internal server error' })
+            }
+        } else {
+            res.send({ error: "An account already exists with this email." });
         }
-    } else {
-        res.send({ error: "An account already exists with this email." });
+    } catch (error) {
+        const errors = [];
+
+        error.inner.forEach((e) => {
+            errors.push({ path: e.path, message: e.message })
+        });
+
+        res.status(400).json({ err: errors })
     }
+
+    /* 
+    const promise = registerSchema.validate({ email, password, confirmPassword }, { abortEarly: false });
+
+    promise.then(async () => {
+        //check email exist or not
+        const existingAdmin = await checkIfAdminExists(admin.email)
+        if (!existingAdmin) {
+            try {
+                const registerAdmin = await Admin.create(admin)
+                res.status(201).json({
+                    message: "Admin registration successful ! Please check email for active account.",
+                    data: registerAdmin.dataValues
+                });
+            } catch (error) {
+                console.log(error);
+                res.status(500).json({ err: 'Internal server error' })
+            }
+        } else {
+            res.send({ error: "An account already exists with this email." });
+        }
+    }).catch((err) => {
+        const errors = [];
+
+        err.inner.forEach((e) => {
+            errors.push({ path: e.path, message: e.message })
+        });
+
+        res.status(400).json({ err: errors })
+    })
+
+   */
 }
 
 
 const forgotPassword = async (req, res) => {
     const email = req.body.email;
 
+    //check email exist or not
     const response = await checkIfAdminExists(email);
     try {
         if (response) {
@@ -101,7 +154,9 @@ const forgotPassword = async (req, res) => {
 const resetPassword = async (req, res) => {
     const { email, password, confirmPassword } = req.body;
 
+    //check email exist or not
     const response = await checkIfAdminExists(email);
+
     if (!response) {
         res.status(404).json({ error: "No admin account found with this email" });
     } else {
@@ -167,10 +222,16 @@ const getSignedInAdminProfile = async (req, res) => {
 
 }
 
+const logout = (req, res) => {
+    res.clearCookie("access_token");
+    res.status(200).json({ message: "Logged out" });
+};
+
 module.exports.login = login;
 module.exports.register = register;
 module.exports.forgotPassword = forgotPassword;
 module.exports.resetPassword = resetPassword;
 module.exports.getSignedInAdminProfile = getSignedInAdminProfile
+module.exports.logout = logout
 
 
