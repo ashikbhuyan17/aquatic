@@ -1,6 +1,6 @@
 const Admin = require("./admin.model");
 const jwt = require("jsonwebtoken");
-const registerSchema = require('./register.schema')
+const registerSchema = require('../register.schema')
 
 
 const checkIfAdminExists = async (email) => {
