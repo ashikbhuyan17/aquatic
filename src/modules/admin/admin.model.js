@@ -38,7 +38,7 @@ const Admin = sequelize.define('admins', {
     createAt: 'create_at',
     updateAt: 'update_at',
     defaultScope: {
-        attributes: { exclude: ['password', 'firstName', 'lastName', 'createdAt', 'updatedAt'] },
+        attributes: { exclude: ['password', 'createdAt', 'updatedAt'] },
     }
 });
 

@@ -127,9 +127,50 @@ const resetPassword = async (req, res) => {
     }
 }
 
+const getSignedInAdminProfile = async (req, res) => {
+    const token = req.signedCookies["access_token"];
+    if (!token) {
+        return res.status(400).send("Bad request.");
+    }
+    const payload = jwt.verify(token, "jwt-secret");
+    const { id, email } = payload
+
+    if (id) {
+        const promise = Admin.findOne({
+            where: { id }
+        })
+
+        function success(user) {
+            if (user) {
+                res.status(200).json({
+                    message: 'User Found',
+                    user: user
+                })
+            } else {
+                res.status(404).json({
+                    message: 'User Not Found',
+                })
+            }
+        }
+
+        function error(err) {
+            console.log(err);
+            res.status(500).send("Internal server error.");
+        }
+
+        promise.then(success).catch(error)
+
+    } else {
+        res.status(500).send("Payload not found");
+    }
+
+
+}
+
 module.exports.login = login;
 module.exports.register = register;
 module.exports.forgotPassword = forgotPassword;
 module.exports.resetPassword = resetPassword;
+module.exports.getSignedInAdminProfile = getSignedInAdminProfile
 
 
