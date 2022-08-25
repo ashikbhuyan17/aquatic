@@ -18,12 +18,14 @@ const checkIfAdminExists = async (email) => {
 };
 const login = async (req, res) => {
     const { email, password } = req.body
+
     const promise = Admin.findOne({
         where: {
             email: email,
             password: password
         }
     })
+
     function success(user) {
         if (user) {
             //create a token and send it
@@ -139,8 +141,8 @@ const forgotPassword = async (req, res) => {
     const email = req.body.email;
 
     //check email exist or not
-    const response = await checkIfAdminExists(email);
     try {
+        const response = await checkIfAdminExists(email);
         if (response) {
             res.status(200).json({ message: `Password reset link sent to ${response.email}` });
         } else {
@@ -148,6 +150,7 @@ const forgotPassword = async (req, res) => {
         }
     } catch (error) {
         console.log(error);
+        res.status(500).json({ err: 'Internal server error' })
     }
 };
 
@@ -155,66 +158,58 @@ const resetPassword = async (req, res) => {
     const { email, password, confirmPassword } = req.body;
 
     //check email exist or not
-    const response = await checkIfAdminExists(email);
-
-    if (!response) {
-        res.status(404).json({ error: "No admin account found with this email" });
-    } else {
-        if (password == confirmPassword) {
-            try {
-                await Admin.update(
-                    {
-                        password: password
-                    },
-                    {
-                        where: { email }
-                    }
-                )
-                res.status(200).json({
-                    message: "Password updated successfully.",
-                });
-            } catch (error) {
-                console.log(error);
-            }
+    try {
+        const response = await checkIfAdminExists(email);
+        if (!response) {
+            res.status(404).json({ error: "No admin account found with this email" });
         } else {
-            res.status(400).json({ error: "Passwords didn't match" });
+            if (password == confirmPassword) {
+                try {
+                    await Admin.update(
+                        {
+                            password: password
+                        },
+                        {
+                            where: { email }
+                        }
+                    )
+                    res.status(200).json({
+                        message: "Password updated successfully.",
+                    });
+                } catch (error) {
+                    console.log(error);
+                }
+            } else {
+                res.status(400).json({ error: "Passwords didn't match" });
+            }
         }
+    } catch (error) {
+        res.status(500).json({ err: 'Internal server error' })
     }
 }
 
 const getSignedInAdminProfile = async (req, res) => {
     const token = req.signedCookies["access_token"];
     if (!token) {
-        return res.status(400).send("Bad request.");
+        return res.status(400).send("jwt must be provided");
     }
     const payload = jwt.verify(token, "jwt-secret");
     const { id, email } = payload
 
     if (id) {
-        const promise = Admin.findOne({
-            where: { id }
-        })
+        try {
+            const promise = await Admin.findOne({
+                where: { id }
+            })
+            res.status(201).json({
+                message: "User Found",
+                user: promise.dataValues
+            });
 
-        function success(user) {
-            if (user) {
-                res.status(200).json({
-                    message: 'User Found',
-                    user: user
-                })
-            } else {
-                res.status(404).json({
-                    message: 'User Not Found',
-                })
-            }
-        }
-
-        function error(err) {
+        } catch (error) {
             console.log(err);
             res.status(500).send("Internal server error.");
         }
-
-        promise.then(success).catch(error)
-
     } else {
         res.status(500).send("Payload not found");
     }
