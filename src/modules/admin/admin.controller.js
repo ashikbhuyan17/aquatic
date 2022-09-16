@@ -10,7 +10,6 @@ const checkIfAdminExists = async (email) => {
                 email: email,
             },
         });
-        console.log("existingAdmin", existingAdmin)
         return existingAdmin;
     } catch (error) {
         console.log(error);
@@ -77,8 +76,6 @@ module.exports.login = async (req, res) => {
 
 
 const register = async (req, res) => {
-    const { firstName, lastName, email, password, confirmPassword } = req.body
-    const admin = { firstName, lastName, email, password, confirmPassword }
     /**
         1. valid email
            a. string
@@ -88,65 +85,49 @@ const register = async (req, res) => {
            a. string
            b. at least one capital letter, one small letter, one number, one special char. 
      */
-    try {
-        await registerSchema.validate({ email, password, confirmPassword }, { abortEarly: false });
-        const existingAdmin = await checkIfAdminExists(admin.email)
-        console.log("------------------existingAdmin", existingAdmin)
-        if (!existingAdmin) {
-            try {
-                const registerAdmin = await Admin.create(admin)
-                res.status(201).json({
-                    message: "Admin registration successful ! Please check email for active account.",
-                    data: registerAdmin.dataValues
-                });
-            } catch (error) {
-                console.log(error);
-                res.status(500).json({ err: 'Internal server error' })
-            }
-        } else {
-            res.send({ error: "An account already exists with this email." });
-        }
-    } catch (error) {
-        // for validation
-        const errors = [];
-        error.inner.forEach((e) => {
-            errors.push({ path: e.path, message: e.message })
-        });
 
-        res.status(400).json({ err: errors })
+    try {
+        const { firstName, lastName, email, password, confirmPassword } = req.body
+        const admin = { firstName, lastName, email, password, confirmPassword }
+        /**
+        user = jody email thake tobe user found
+        created = user na paile created true hbe 
+        default = user na pawa gele object diye registration create hobe 
+        */
+        const [user, created] = await Admin.findOrCreate({
+            where: { email },
+            default: { firstName, lastName, email, password, confirmPassword }
+        })
+        if (!created) {
+            res.status(409).json({ error: "An account already exists with this email." });
+        }
+        res.status(201).json({
+            message: "Admin registration successful ! Please check email for active account.",
+            data: user
+        });
+    } catch (error) {
+        res.status(400).json({ err: error })
     }
 
-    /* 
-    const promise = registerSchema.validate({ email, password, confirmPassword }, { abortEarly: false });
-
-    promise.then(async () => {
-        //check email exist or not
-        const existingAdmin = await checkIfAdminExists(admin.email)
-        if (!existingAdmin) {
-            try {
-                const registerAdmin = await Admin.create(admin)
-                res.status(201).json({
-                    message: "Admin registration successful ! Please check email for active account.",
-                    data: registerAdmin.dataValues
-                });
-            } catch (error) {
-                console.log(error);
-                res.status(500).json({ err: 'Internal server error' })
-            }
-        } else {
-            res.send({ error: "An account already exists with this email." });
-        }
-    }).catch((err) => {
-        const errors = [];
-
-        err.inner.forEach((e) => {
-            errors.push({ path: e.path, message: e.message })
-        });
-
-        res.status(400).json({ err: errors })
-    })
-
-   */
+    // try {
+    //     const existingAdmin = await checkIfAdminExists(admin.email)
+    //     if (!existingAdmin) {
+    //         try {
+    //             const registerAdmin = await Admin.create(admin)
+    //             res.status(201).json({
+    //                 message: "Admin registration successful ! Please check email for active account.",
+    //                 data: registerAdmin.dataValues
+    //             });
+    //         } catch (error) {
+    //             console.log(error);
+    //             res.status(500).json({ err: 'Internal server error' })
+    //         }
+    //     } else {
+    //         res.send({ error: "An account already exists with this email." });
+    //     }
+    // } catch (error) {
+    //     res.status(400).json({ err: error })
+    // }
 }
 
 

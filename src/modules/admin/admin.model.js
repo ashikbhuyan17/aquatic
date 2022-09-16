@@ -30,7 +30,7 @@ const Admin = sequelize.define('admins', {
     },
     password: {
         type: DataTypes.STRING,
-        allowNull: false,
+        // allowNull: false,
     },
 }, {
     tableName: 'admins',
