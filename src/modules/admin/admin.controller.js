@@ -1,7 +1,7 @@
 const Admin = require("./admin.model");
 const jwt = require("jsonwebtoken");
-const registerSchema = require('../register.schema')
-
+const { registerSchema, loginSchema } = require('./admin.schema')
+// const loginSchema = require('./admin.schema')
 
 const checkIfAdminExists = async (email) => {
     try {
@@ -10,14 +10,26 @@ const checkIfAdminExists = async (email) => {
                 email: email,
             },
         });
+        console.log("existingAdmin", existingAdmin)
         return existingAdmin;
     } catch (error) {
         console.log(error);
         return null
     }
 };
-const login = async (req, res) => {
+module.exports.login = async (req, res) => {
     const { email, password } = req.body
+
+    try {
+        await loginSchema.validate({ email, password }, { abortEarly: false });
+    } catch (error) {
+        const errors = [];
+        error.inner.forEach((e) => {
+            errors.push({ path: e.path, message: e.message })
+        });
+
+        res.status(400).json({ err: errors })
+    }
 
     const promise = Admin.findOne({
         where: {
@@ -79,6 +91,7 @@ const register = async (req, res) => {
     try {
         await registerSchema.validate({ email, password, confirmPassword }, { abortEarly: false });
         const existingAdmin = await checkIfAdminExists(admin.email)
+        console.log("------------------existingAdmin", existingAdmin)
         if (!existingAdmin) {
             try {
                 const registerAdmin = await Admin.create(admin)
@@ -94,8 +107,8 @@ const register = async (req, res) => {
             res.send({ error: "An account already exists with this email." });
         }
     } catch (error) {
+        // for validation
         const errors = [];
-
         error.inner.forEach((e) => {
             errors.push({ path: e.path, message: e.message })
         });
@@ -222,7 +235,7 @@ const logout = (req, res) => {
     res.status(200).json({ message: "Logged out" });
 };
 
-module.exports.login = login;
+// module.exports.login = login;
 module.exports.register = register;
 module.exports.forgotPassword = forgotPassword;
 module.exports.resetPassword = resetPassword;
