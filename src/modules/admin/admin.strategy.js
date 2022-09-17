@@ -13,7 +13,7 @@ module.exports = () => {
 
     passport.use('admin-jwt', new Strategy(
         {
-            secretOrKey: 'secret',
+            secretOrKey: 'jwt-secret',
             jwtFromRequest: cookieExtractor
         },
         function (payload, done) {

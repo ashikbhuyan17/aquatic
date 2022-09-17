@@ -226,13 +226,14 @@ const resetPassword = async (req, res) => {
 
 const getSignedInAdminProfile = async (req, res) => {
     try {
-        const token = req.signedCookies["access_token"];
-        if (!token) {
-            // return res.status(400).send("jwt must be provided");
-            return res.status(400).send("bad request");
-        }
-        const payload = jwt.verify(token, "jwt-secret");
-        const { id } = payload
+        // const token = req.signedCookies["access_token"];
+        // if (!token) {
+        //     // return res.status(400).send("jwt must be provided");
+        //     return res.status(400).send("bad request");
+        // }
+        // const payload = jwt.verify(token, "jwt-secret");
+        // const { id } = payload
+        const id = req.user.id
 
         const admin = await Admin.findOne({
             where: { id }
