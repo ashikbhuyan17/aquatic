@@ -1,6 +1,7 @@
 const Admin = require("./admin.model");
 const jwt = require("jsonwebtoken");
 const { registerSchema, loginSchema } = require('./admin.schema')
+const { generateAccessToken } = require('./admin.service')
 // const loginSchema = require('./admin.schema')
 
 const checkIfAdminExists = async (email) => {
@@ -16,63 +17,104 @@ const checkIfAdminExists = async (email) => {
         return null
     }
 };
+
 module.exports.login = async (req, res) => {
-    const { email, password } = req.body
+
+    // try {
+    //     await loginSchema.validate({ email, password }, { abortEarly: false });
+    // } catch (error) {
+    //     const errors = [];
+    //     error.inner.forEach((e) => {
+    //         errors.push({ path: e.path, message: e.message })
+    //     });
+
+    //     res.status(400).json({ err: errors })
+    // }
 
     try {
-        await loginSchema.validate({ email, password }, { abortEarly: false });
-    } catch (error) {
-        const errors = [];
-        error.inner.forEach((e) => {
-            errors.push({ path: e.path, message: e.message })
+        const { email, password } = req.body
+        const admin = await Admin.findOne({
+            where: {
+                email: email,
+                password: password
+            }
+        })
+        if (!admin) {
+            return res.status(400).send("Invalid Credentials")
+        }
+        res.cookie("access_token", generateAccessToken(admin), {
+            httpOnly: true,
+            signed: true,
         });
 
-        res.status(400).json({ err: errors })
+        res.status(200).json({
+            message: "Login to admin dashboard successful !",
+            admin
+        });
+    } catch (error) {
+        res.status(500).json({
+            message: "Internal Server Error",
+            err: error
+        })
     }
-
-    const promise = Admin.findOne({
-        where: {
-            email: email,
-            password: password
-        }
-    })
-
-    function success(user) {
-        if (user) {
-            //create a token and send it
-            const access_token = jwt.sign(
-                {
-                    id: user.id,
-                    email: user.email
-                },
-                "jwt-secret",
-                {
-                    expiresIn: "1h",
-                    issuer: user.id.toString(),
-                }
-            );
-
-            res.cookie("access_token", access_token, {
-                httpOnly: true,
-                signed: true,
-            });
-
-            res.status(200).json({
-                message: "Login to admin dashboard successful !",
-                user: user
-            });
-        } else {
-            res.status(404).send("Invalid credentials !");
-        }
-    }
-
-    function error(err) {
-        console.log(err);
-        res.status(500).send("Internal server error.");
-    }
-
-    promise.then(success).catch(error);
 }
+// module.exports.login = async (req, res) => {
+//     const { email, password } = req.body
+
+//     try {
+//         await loginSchema.validate({ email, password }, { abortEarly: false });
+//     } catch (error) {
+//         const errors = [];
+//         error.inner.forEach((e) => {
+//             errors.push({ path: e.path, message: e.message })
+//         });
+
+//         res.status(400).json({ err: errors })
+//     }
+
+//     const promise = Admin.findOne({
+//         where: {
+//             email: email,
+//             password: password
+//         }
+//     })
+
+//     function success(user) {
+//         if (user) {
+//             //create a token and send it
+//             const access_token = jwt.sign(
+//                 {
+//                     id: user.id,
+//                     email: user.email
+//                 },
+//                 "jwt-secret",
+//                 {
+//                     expiresIn: "1h",
+//                     issuer: user.id.toString(),
+//                 }
+//             );
+
+//             res.cookie("access_token", access_token, {
+//                 httpOnly: true,
+//                 signed: true,
+//             });
+
+//             res.status(200).json({
+//                 message: "Login to admin dashboard successful !",
+//                 user: user
+//             });
+//         } else {
+//             res.status(404).send("Invalid credentials !");
+//         }
+//     }
+
+//     function error(err) {
+//         console.log(err);
+//         res.status(500).send("Internal server error.");
+//     }
+
+//     promise.then(success).catch(error);
+// }
 
 
 const register = async (req, res) => {
@@ -96,7 +138,7 @@ const register = async (req, res) => {
         */
         const [user, created] = await Admin.findOrCreate({
             where: { email },
-            default: { firstName, lastName, email, password, confirmPassword }
+            defaults: { firstName, lastName, email, password, confirmPassword }
         })
         if (!created) {
             res.status(409).json({ error: "An account already exists with this email." });
@@ -183,30 +225,30 @@ const resetPassword = async (req, res) => {
 }
 
 const getSignedInAdminProfile = async (req, res) => {
-    const token = req.signedCookies["access_token"];
-    if (!token) {
-        return res.status(400).send("jwt must be provided");
-    }
-    const payload = jwt.verify(token, "jwt-secret");
-    const { id, email } = payload
-
-    if (id) {
-        try {
-            const promise = await Admin.findOne({
-                where: { id }
-            })
-            res.status(201).json({
-                message: "User Found",
-                user: promise.dataValues
-            });
-
-        } catch (error) {
-            console.log(err);
-            res.status(500).send("Internal server error.");
+    try {
+        const token = req.signedCookies["access_token"];
+        if (!token) {
+            // return res.status(400).send("jwt must be provided");
+            return res.status(400).send("bad request");
         }
-    } else {
-        res.status(500).send("Payload not found");
+        const payload = jwt.verify(token, "jwt-secret");
+        const { id } = payload
+
+        const admin = await Admin.findOne({
+            where: { id }
+        })
+        if (!admin) {
+            return res.status(404).send("user not found")
+        }
+        res.status(200).json({
+            message: "User Found",
+            admin
+        });
+    } catch (error) {
+        res.status(500).send("Internal server error.");
     }
+
+
 
 
 }

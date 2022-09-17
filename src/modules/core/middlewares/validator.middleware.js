@@ -1,5 +1,4 @@
 function validate(schema) {
-    console.log('..............................')
     return async function (req, res, next) {
         try {
             await schema.validate(
