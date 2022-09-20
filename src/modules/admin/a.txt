@@ -1,0 +1,6 @@
+1. remove try catch
+2. separate validation
+3. hash password
+4. env file handle
+5. handle catch to unique file
+6. common reuseable function
