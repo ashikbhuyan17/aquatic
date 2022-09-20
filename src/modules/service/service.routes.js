@@ -1,5 +1,12 @@
-const { createService } = require("./service.controller")
+const { createService, getService } = require("./service.controller")
 
 module.exports = function (app) {
-    app.post("/api/service", createService)
+    app
+        .route("/api/service")
+        .post(createService)
+        .get(getService)
+
+    // app.post("/api/service", createService)
+    // app.get("/api/service", getService)
+
 }
