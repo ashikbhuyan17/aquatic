@@ -8,7 +8,7 @@ const Service = sequelize.define('services', {
         type: DataTypes.UUID,
         defaultValue: DataTypes.UUIDV4
     },
-    service_name: {
+    name: {
         type: DataTypes.STRING,
         allowNull: false
     },

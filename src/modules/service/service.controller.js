@@ -1,11 +1,10 @@
 const Service = require("./service.model")
 
 const createService = async (req, res) => {
-    const { service_name, description } = req.body
-    console.log(service_name);
+    const { name, description } = req.body
     try {
         const created = await Service.create({
-            service_name,
+            name,
             description
         })
         if (!created) {

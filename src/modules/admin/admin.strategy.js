@@ -4,7 +4,7 @@ const Admin = require('./admin.model');
 
 module.exports = () => {
     function cookieExtractor(req) {
-        const token = null;
+        let token = null;
         if (req && req.signedCookies) {
             token = req.signedCookies["access_token"];
         }

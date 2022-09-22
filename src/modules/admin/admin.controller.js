@@ -234,6 +234,9 @@ const getSignedInAdminProfile = async (req, res) => {
         // const payload = jwt.verify(token, "jwt-secret");
         // const { id } = payload
         const id = req.user.id
+        console.log(",,,,,,,,,,,,,,,,,,,,,,,,", req.user)
+        console.log(",,,,,,,,,,,,,,,,,,,,,,,,", req.user.id)
+        console.log(",,,,,,,,,,,,,,,,,,,,,,,,", req.user.email)
 
         const admin = await Admin.findOne({
             where: { id }

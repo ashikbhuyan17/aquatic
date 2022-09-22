@@ -5,7 +5,7 @@ const AdminStrategy = (req, res, next) => {
             return res.status(500).send("Internal server error.");
         }
         if (!admin) {
-            return res.status(401).send("unauthenticated admin ")
+            return res.status(401).send("Unauthenticated admin ")
         }
         req.login(
             admin,
